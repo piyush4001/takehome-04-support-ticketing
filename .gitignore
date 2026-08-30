@@ -1,12 +1,30 @@
+# Dependencies
 node_modules/
-dist/
-build/
-.next/
-target/
-__pycache__/
-venv/
+
+# Environment
 .env
 .env.local
 .env.*.local
+
+# Build
+dist/
+build/
+
+# Vite
+apps/frontend/.vite/
+
+# Logs
 *.log
+
+# OS
 .DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Prisma
+apps/backend/prisma/*.db
+# Generated Prisma Client
+apps/backend/src/generated/

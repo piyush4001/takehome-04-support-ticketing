@@ -1,8 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
@@ -10,4 +5,175 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+}
+
+enum Role {
+  AGENT
+  SUPERVISOR
+}
+
+enum TicketStatus {
+  NEW
+  OPEN
+  PENDING
+  RESOLVED
+  CLOSED
+}
+
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum ReplyType {
+  INTERNAL_NOTE
+  CUSTOMER_REPLY
+}
+
+enum TicketEventType {
+  TICKET_CREATED
+  STATUS_CHANGED
+  ASSIGNMENT_CHANGED
+  COLLABORATOR_ADDED
+  COLLABORATOR_REMOVED
+  REPLY_ADDED
+  ARCHIVED
+  RESTORED
+}
+
+enum SLAAlertType {
+  AT_RISK
+  BREACHED
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         Role
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  assignedTickets    Ticket[]             @relation("PrimaryAssignee")
+  collaborators      TicketCollaborator[]
+  replies            Reply[]
+  ticketEvents       TicketEvent[]
+  acknowledgedAlerts SLAAlert[]           @relation("AlertAcknowledgedBy")
+
+  @@index([role])
+}
+
+model Ticket {
+  id          String @id @default(uuid())
+  subject     String
+  description String @db.Text
+
+  requesterName  String
+  requesterEmail String
+
+  priority TicketPriority
+  category String
+  status   TicketStatus   @default(NEW)
+
+  primaryAssigneeId String
+  primaryAssignee   User   @relation("PrimaryAssignee", fields: [primaryAssigneeId], references: [id], onDelete: Restrict)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  archivedAt DateTime?
+  resolvedAt DateTime?
+  closedAt   DateTime?
+
+  responseTargetSeconds  Int
+  responseElapsedSeconds Int       @default(0)
+  slaRunningSince        DateTime?
+  firstRespondedAt       DateTime?
+
+  collaborators TicketCollaborator[]
+  replies       Reply[]
+  events        TicketEvent[]
+  slaAlerts     SLAAlert[]
+
+  @@index([status])
+  @@index([priority])
+  @@index([category])
+  @@index([primaryAssigneeId])
+  @@index([createdAt])
+  @@index([updatedAt])
+  @@index([archivedAt])
+  @@index([resolvedAt])
+  @@index([status, archivedAt])
+  @@index([primaryAssigneeId, archivedAt])
+}
+
+model TicketCollaborator {
+  ticketId String
+  userId   String
+  addedAt  DateTime @default(now())
+
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Restrict)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@id([ticketId, userId])
+  @@index([userId])
+}
+
+model Reply {
+  id       String @id @default(uuid())
+  ticketId String
+  authorId String
+
+  body String    @db.Text
+  type ReplyType
+
+  createdAt DateTime @default(now())
+
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Restrict)
+  author User   @relation(fields: [authorId], references: [id], onDelete: Restrict)
+
+  @@index([ticketId, createdAt])
+}
+
+model TicketEvent {
+  id       String  @id @default(uuid())
+  ticketId String
+  actorId  String?
+
+  type      TicketEventType
+  oldValue  String?
+  newValue  String?
+  metadata  Json?
+  createdAt DateTime        @default(now())
+
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Restrict)
+  actor  User?  @relation(fields: [actorId], references: [id], onDelete: Restrict)
+
+  @@index([ticketId, createdAt])
+  @@index([actorId])
+}
+
+model SLAAlert {
+  id       String @id @default(uuid())
+  ticketId String
+
+  type           SLAAlertType
+  breachSequence Int
+
+  acknowledgedAt   DateTime?
+  acknowledgedById String?
+
+  createdAt  DateTime  @default(now())
+  resolvedAt DateTime?
+
+  ticket         Ticket @relation(fields: [ticketId], references: [id], onDelete: Restrict)
+  acknowledgedBy User?  @relation("AlertAcknowledgedBy", fields: [acknowledgedById], references: [id], onDelete: Restrict)
+
+  @@unique([ticketId, breachSequence, type])
+  @@index([ticketId])
+  @@index([acknowledgedAt])
+  @@index([ticketId, breachSequence])
 }
