@@ -3,6 +3,7 @@ import cors from "cors";
 import authRoutes from "./modules/auth/auth.routes.js";
 import { errorMiddleware } from "./middleware/error.middleware.js";
 import { authenticate } from "./middleware/auth.middleware.js";
+import ticketRoutes from "./modules/tickets/ticket.routes.js";
 
 const app = express();
 
@@ -13,7 +14,6 @@ app.use(
 );
 
 app.use(express.json());
-
 app.get("/api/health", (_req, res) => {
   res.json({
     success: true,
@@ -27,6 +27,7 @@ app.get("/api/me", authenticate, (req, res) => {
   });
 });
 app.use("/api/auth", authRoutes);
+app.use("/api/tickets", ticketRoutes);
 
 app.use(errorMiddleware);
 
