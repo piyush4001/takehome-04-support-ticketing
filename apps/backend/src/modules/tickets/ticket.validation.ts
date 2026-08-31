@@ -88,3 +88,44 @@ export const listTicketsSchema = z.object({
 export type ListTicketsInput = z.infer<
   typeof listTicketsSchema
 >;
+
+export const updateTicketSchema = z
+  .object({
+    subject: z.string().trim().min(1).max(200).optional(),
+
+    description: z.string().trim().min(1).optional(),
+
+    requesterName: z.string().trim().min(1).optional(),
+
+    requesterEmail: z.string().email().optional(),
+
+    priority: z
+      .enum(["LOW", "MEDIUM", "HIGH", "URGENT"])
+      .optional(),
+
+    category: z.string().trim().min(1).optional(),
+  })
+  .refine(
+    (data) => Object.keys(data).length > 0,
+    {
+      message: "At least one field must be provided",
+    }
+  );
+
+export const updateTicketStatusSchema = z.object({
+  status: z.enum([
+    "NEW",
+    "OPEN",
+    "PENDING",
+    "RESOLVED",
+    "CLOSED",
+  ]),
+});
+
+export type UpdateTicketInput = z.infer<
+  typeof updateTicketSchema
+>;
+
+export type UpdateTicketStatusInput = z.infer<
+  typeof updateTicketStatusSchema
+>;

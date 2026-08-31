@@ -3,6 +3,14 @@ import type { CreateTicketInput } from "./ticket.validation.js";
 import type { ListTicketsInput } from "./ticket.validation.js";
 import type { Prisma } from "../../generated/prisma/client.js";
 import { AppError } from "../../utils/app.error.js";
+import type { TicketStatus } from "../../generated/prisma/enums.js";
+import {
+  canAccessTicket,
+} from "./ticket.authorization.js";
+import type {
+  UpdateTicketInput,
+} from "./ticket.validation.js";
+
 const SLA_TARGETS: Record<
   CreateTicketInput["priority"],
   number
@@ -11,6 +19,17 @@ const SLA_TARGETS: Record<
   MEDIUM: 12 * 60 * 60,
   HIGH: 4 * 60 * 60,
   URGENT: 60 * 60,
+};
+
+const ALLOWED_STATUS_TRANSITIONS: Record<
+  TicketStatus,
+  TicketStatus[]
+> = {
+  NEW: ["OPEN"],
+  OPEN: ["PENDING", "RESOLVED"],
+  PENDING: ["OPEN"],
+  RESOLVED: ["CLOSED"],
+  CLOSED: ["OPEN"],
 };
 
 export async function createTicket(
@@ -342,4 +361,163 @@ export async function getTicketById(
   403,
   "You do not have permission to access this ticket"
 );
+}
+
+function validateStatusTransition(
+  currentStatus: TicketStatus,
+  nextStatus: TicketStatus
+) {
+  if (
+    !ALLOWED_STATUS_TRANSITIONS[currentStatus].includes(
+      nextStatus
+    )
+  ) {
+    throw new AppError(
+      400,
+      `Invalid status transition: ${currentStatus} → ${nextStatus}`
+    );
+  }
+}
+
+export async function updateTicket(
+  ticketId: string,
+  input: UpdateTicketInput,
+  userId: string,
+  userRole: "AGENT" | "SUPERVISOR"
+) {
+  const ticket = await prisma.ticket.findUnique({
+    where: {
+      id: ticketId,
+    },
+    include: {
+      collaborators: {
+        select: {
+          userId: true,
+        },
+      },
+    },
+  });
+
+  if (!ticket || ticket.archivedAt) {
+    throw new AppError(404, "Ticket not found");
+  }
+
+  canAccessTicket(ticket, userId, userRole);
+
+  return prisma.ticket.update({
+    where: {
+      id: ticketId,
+    },
+    data: input,
+  });
+}
+
+export async function updateTicketStatus(
+  ticketId: string,
+  nextStatus: TicketStatus,
+  userId: string,
+  userRole: "AGENT" | "SUPERVISOR"
+) {
+  const ticket = await prisma.ticket.findUnique({
+    where: {
+      id: ticketId,
+    },
+    include: {
+      collaborators: {
+        select: {
+          userId: true,
+        },
+      },
+    },
+  });
+
+  if (!ticket || ticket.archivedAt) {
+    throw new AppError(404, "Ticket not found");
+  }
+
+  canAccessTicket(ticket, userId, userRole);
+
+  validateStatusTransition(
+    ticket.status,
+    nextStatus
+  );
+
+  if (
+    ticket.status === "CLOSED" &&
+    nextStatus === "OPEN"
+  ) {
+    if (!ticket.closedAt) {
+      throw new AppError(
+        400,
+        "Closed ticket cannot be reopened because its closing time is missing"
+      );
+    }
+
+    const reopeningWindowMs =
+      7 * 24 * 60 * 60 * 1000;
+
+    const reopenDeadline =
+      ticket.closedAt.getTime() +
+      reopeningWindowMs;
+
+    if (Date.now() > reopenDeadline) {
+      throw new AppError(
+        400,
+        "This ticket can no longer be reopened"
+      );
+    }
+  }
+
+  const now = new Date();
+
+  return prisma.$transaction(async (tx) => {
+    const updateData: Prisma.TicketUpdateInput = {
+      status: nextStatus,
+    };
+
+    if (nextStatus === "RESOLVED") {
+      updateData.resolvedAt = now;
+    }
+
+    if (nextStatus === "CLOSED") {
+      updateData.closedAt = now;
+    }
+
+    if (
+      ticket.status === "CLOSED" &&
+      nextStatus === "OPEN"
+    ) {
+      updateData.closedAt = null;
+    }
+
+    if (nextStatus === "PENDING") {
+      updateData.slaRunningSince = null;
+    }
+
+    if (
+      ticket.status === "PENDING" &&
+      nextStatus === "OPEN"
+    ) {
+      updateData.slaRunningSince = now;
+    }
+
+    const updatedTicket = await tx.ticket.update({
+      where: {
+        id: ticketId,
+      },
+      data: updateData,
+    });
+
+    await tx.ticketEvent.create({
+      data: {
+        ticketId,
+        actorId: userId,
+        type: "STATUS_CHANGED",
+        oldValue: ticket.status,
+        newValue: nextStatus,
+      },
+    });
+
+    return updatedTicket;
+  });
 }
