@@ -8,6 +8,7 @@ import { createTicketSchema } from "./ticket.validation.js";
 import { createTicket as createTicketService } from "./ticket.service.js";
 import { listTicketsSchema } from "./ticket.validation.js";
 import { listTickets as listTicketsService } from "./ticket.service.js";
+import { getTicketById as getTicketByIdService } from "./ticket.service.js";
 
 export async function createTicket(
   req: Request,
@@ -62,6 +63,43 @@ export async function listTickets(
     return res.status(200).json({
       success: true,
       data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getTicketById(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required",
+      });
+    }
+
+    const { id: ticketId } = req.params;
+
+    if (!ticketId || Array.isArray(ticketId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid ticket ID",
+      });
+    }
+
+    const ticket = await getTicketByIdService(
+      ticketId,
+      req.user.userId,
+      req.user.role
+    );
+
+    return res.status(200).json({
+      success: true,
+      data: ticket,
     });
   } catch (error) {
     next(error);

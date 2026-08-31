@@ -1,4 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
+import { AppError } from "../utils/app.error.js";
 
 export function errorMiddleware(
   error: unknown,
@@ -7,6 +8,13 @@ export function errorMiddleware(
   _next: NextFunction
 ) {
   console.error(error);
+
+  if (error instanceof AppError) {
+    return res.status(error.statusCode).json({
+      success: false,
+      message: error.message,
+    });
+  }
 
   if (error instanceof Error) {
     return res.status(400).json({

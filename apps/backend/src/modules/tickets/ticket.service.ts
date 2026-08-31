@@ -2,6 +2,7 @@ import { prisma } from "../../lib/prisma.js";
 import type { CreateTicketInput } from "./ticket.validation.js";
 import type { ListTicketsInput } from "./ticket.validation.js";
 import type { Prisma } from "../../generated/prisma/client.js";
+import { AppError } from "../../utils/app.error.js";
 const SLA_TARGETS: Record<
   CreateTicketInput["priority"],
   number
@@ -222,4 +223,123 @@ export async function listTickets(
       totalPages: Math.ceil(total / pageSize),
     },
   };
+}
+
+export async function getTicketById(
+  ticketId: string,
+  userId: string,
+  userRole: "AGENT" | "SUPERVISOR"
+) {
+  const ticket = await prisma.ticket.findUnique({
+    where: {
+      id: ticketId,
+    },
+
+    include: {
+      primaryAssignee: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+        },
+      },
+
+      collaborators: {
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              role: true,
+            },
+          },
+        },
+      },
+
+      replies: {
+        orderBy: {
+          createdAt: "asc",
+        },
+
+        include: {
+          author: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              role: true,
+            },
+          },
+        },
+      },
+
+      events: {
+        orderBy: {
+          createdAt: "asc",
+        },
+
+        include: {
+          actor: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              role: true,
+            },
+          },
+        },
+      },
+
+      slaAlerts: {
+        orderBy: {
+          createdAt: "desc",
+        },
+
+        include: {
+          acknowledgedBy: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!ticket) {
+    throw new AppError(404, "Ticket not found");
+  }
+
+  // Archived tickets are not part of the normal queue.
+  if (ticket.archivedAt) {
+    throw new AppError(404, "Ticket not found");
+  }
+
+  // Supervisors can access any active ticket.
+  if (userRole === "SUPERVISOR") {
+    return ticket;
+  }
+
+  // Agents can access tickets they own.
+  if (ticket.primaryAssigneeId === userId) {
+    return ticket;
+  }
+
+  // Agents can also access tickets where they are collaborators.
+  const isCollaborator = ticket.collaborators.some(
+    (collaborator) => collaborator.userId === userId
+  );
+
+  if (isCollaborator) {
+    return ticket;
+  }
+
+  throw new AppError(
+  403,
+  "You do not have permission to access this ticket"
+);
 }
