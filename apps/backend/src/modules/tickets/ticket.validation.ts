@@ -129,3 +129,27 @@ export type UpdateTicketInput = z.infer<
 export type UpdateTicketStatusInput = z.infer<
   typeof updateTicketStatusSchema
 >;
+
+export const createReplySchema = z.object({
+  body: z
+    .string()
+    .trim()
+    .min(1, "Reply body is required"),
+
+  type: z.enum([
+    "CUSTOMER_REPLY",
+    "INTERNAL_NOTE",
+  ]),
+});
+
+export type CreateReplyInput = z.infer<
+  typeof createReplySchema
+>;
+
+export const addCollaboratorSchema = z.object({
+  userId: z.string().uuid(),
+});
+
+export type AddCollaboratorInput = z.infer<
+  typeof addCollaboratorSchema
+>;

@@ -7,6 +7,13 @@ import {
   updateTicket,
   updateTicketStatus,
 } from "./ticket.controller.js";
+import {
+  createReply,
+} from "./reply.controller.js";
+import {
+  addCollaborator,
+  removeCollaborator,
+} from "./collaborator.controller.js";
 
 const router = Router();
 
@@ -39,4 +46,23 @@ router.patch(
   authenticate,
   updateTicketStatus
 );
+
+router.post(
+  "/:id/replies",
+  authenticate,
+  createReply
+);
+
+router.post(
+  "/:id/collaborators",
+  authenticate,
+  addCollaborator
+);
+
+router.delete(
+  "/:id/collaborators/:userId",
+  authenticate,
+  removeCollaborator
+);
+
 export default router;
