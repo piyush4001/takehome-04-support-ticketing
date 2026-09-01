@@ -11,6 +11,10 @@ import type {
   UpdateTicketInput,
 } from "./ticket.validation.js";
 
+import {
+  validateStatusTransition,
+} from "./ticket.lifecycle.js";
+import { buildTicketWhere } from "./ticket.filters.js";
 const SLA_TARGETS: Record<
   CreateTicketInput["priority"],
   number
@@ -112,9 +116,15 @@ export async function listTickets(
     sortOrder,
   } = input;
 
-  const where: Prisma.TicketWhereInput = {
-  archivedAt: null,
-};
+  const where = buildTicketWhere({
+  search,
+  status,
+  priority,
+  category,
+  assigneeId,
+  userId,
+  userRole,
+});
 
   // --------------------------------------------------
   // Role-based visibility
@@ -362,23 +372,6 @@ export async function getTicketById(
   "You do not have permission to access this ticket"
 );
 }
-
-function validateStatusTransition(
-  currentStatus: TicketStatus,
-  nextStatus: TicketStatus
-) {
-  if (
-    !ALLOWED_STATUS_TRANSITIONS[currentStatus].includes(
-      nextStatus
-    )
-  ) {
-    throw new AppError(
-      400,
-      `Invalid status transition: ${currentStatus} → ${nextStatus}`
-    );
-  }
-}
-
 export async function updateTicket(
   ticketId: string,
   input: UpdateTicketInput,

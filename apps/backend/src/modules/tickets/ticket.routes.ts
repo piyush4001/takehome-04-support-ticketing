@@ -15,6 +15,13 @@ import {
   removeCollaborator,
 } from "./collaborator.controller.js";
 
+import {
+  bulkReassign,
+  bulkClose,
+} from "./bulk.controller.js";
+import {
+  exportTicketsCsvController,
+} from "./ticket.controller.js";
 const router = Router();
 
 router.get(
@@ -23,6 +30,22 @@ router.get(
   listTickets
 );
 
+router.get(
+  "/export/csv",
+  authenticate,
+  exportTicketsCsvController
+);
+router.post(
+  "/bulk/reassign",
+  authenticate,
+  bulkReassign
+);
+
+router.post(
+  "/bulk/close",
+  authenticate,
+  bulkClose
+);
 router.get(
   "/:id",
   authenticate,

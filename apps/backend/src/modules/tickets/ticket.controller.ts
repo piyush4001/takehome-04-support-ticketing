@@ -13,6 +13,9 @@ import { updateTicketSchema} from "./ticket.validation.js";
 import { updateTicket as updateTicketService } from "./ticket.service.js";
 import { updateTicketStatus as updateTicketStatusService } from "./ticket.service.js";
 
+import { exportTicketsSchema } from "./ticket.validation.js";
+import { exportTicketsCsv } from "./ticket-export.service.js";
+
 export async function createTicket(
   req: Request,
   res: Response,
@@ -188,6 +191,42 @@ export async function updateTicketStatus(
       success: true,
       data: ticket,
     });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function exportTicketsCsvController(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const input = exportTicketsSchema.parse(req.query);
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required",
+      });
+    }
+
+    const csv = await exportTicketsCsv(
+      input,
+      req.user.userId,
+      req.user.role
+    );
+
+    res.setHeader(
+      "Content-Type",
+      "text/csv; charset=utf-8"
+    );
+
+    res.setHeader(
+      "Content-Disposition",
+      'attachment; filename="tickets.csv"'
+    );
+
+    res.status(200).send(csv);
   } catch (error) {
     next(error);
   }

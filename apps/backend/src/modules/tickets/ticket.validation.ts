@@ -153,3 +153,36 @@ export const addCollaboratorSchema = z.object({
 export type AddCollaboratorInput = z.infer<
   typeof addCollaboratorSchema
 >;
+
+export const bulkReassignSchema = z.object({
+  ticketIds: z
+    .array(z.string().uuid())
+    .min(1, "At least one ticket is required")
+    .max(100, "Maximum 100 tickets per operation"),
+
+  assigneeId: z.string().uuid(),
+});
+
+export type BulkReassignInput = z.infer<
+  typeof bulkReassignSchema
+>;
+
+export const bulkCloseSchema = z.object({
+  ticketIds: z
+    .array(z.string().uuid())
+    .min(1)
+    .max(100),
+});
+
+export type BulkCloseInput = z.infer<
+  typeof bulkCloseSchema
+>;
+
+export const exportTicketsSchema = listTicketsSchema.omit({
+  page: true,
+  pageSize: true,
+});
+
+export type ExportTicketsInput = z.infer<
+  typeof exportTicketsSchema
+>;
