@@ -42,6 +42,64 @@ export async function createReply(
       },
     });
 
+    const now = new Date();
+
+    const isFirstAgentResponse =
+      userRole === "AGENT" &&
+      input.type === "CUSTOMER_REPLY" &&
+      !ticket.firstRespondedAt;
+
+    const updateData: {
+      firstRespondedAt?: Date;
+      responseElapsedSeconds?: number;
+      slaRunningSince?: Date | null;
+    } = {};
+
+    // A customer-visible agent reply is the first response.
+    if (isFirstAgentResponse) {
+      const elapsedSinceRunning =
+        ticket.slaRunningSince
+          ? Math.max(
+              0,
+              Math.floor(
+                (now.getTime() -
+                  ticket.slaRunningSince.getTime()) /
+                  1000
+              )
+            )
+          : 0;
+
+      updateData.firstRespondedAt = now;
+
+      updateData.responseElapsedSeconds =
+        ticket.responseElapsedSeconds +
+        elapsedSinceRunning;
+
+      updateData.slaRunningSince = null;
+    }
+
+    if (Object.keys(updateData).length > 0) {
+      await tx.ticket.update({
+        where: {
+          id: ticketId,
+        },
+        data: updateData,
+      });
+    }
+
+    // The first agent response resolves any active SLA alerts.
+    if (isFirstAgentResponse) {
+      await tx.sLAAlert.updateMany({
+        where: {
+          ticketId,
+          resolvedAt: null,
+        },
+        data: {
+          resolvedAt: now,
+        },
+      });
+    }
+
     await tx.ticketEvent.create({
       data: {
         ticketId,

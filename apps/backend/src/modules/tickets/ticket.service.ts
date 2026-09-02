@@ -24,18 +24,6 @@ const SLA_TARGETS: Record<
   HIGH: 4 * 60 * 60,
   URGENT: 60 * 60,
 };
-
-const ALLOWED_STATUS_TRANSITIONS: Record<
-  TicketStatus,
-  TicketStatus[]
-> = {
-  NEW: ["OPEN"],
-  OPEN: ["PENDING", "RESOLVED"],
-  PENDING: ["OPEN"],
-  RESOLVED: ["CLOSED"],
-  CLOSED: ["OPEN"],
-};
-
 export async function createTicket(
   input: CreateTicketInput,
   actorId: string
@@ -464,6 +452,21 @@ export async function updateTicketStatus(
   const now = new Date();
 
   return prisma.$transaction(async (tx) => {
+    const elapsedSinceRunning =
+  ticket.slaRunningSince
+    ? Math.max(
+        0,
+        Math.floor(
+          (now.getTime() -
+            ticket.slaRunningSince.getTime()) /
+            1000
+        )
+      )
+    : 0;
+
+const currentElapsedSeconds =
+  ticket.responseElapsedSeconds +
+  elapsedSinceRunning;
     const updateData: Prisma.TicketUpdateInput = {
       status: nextStatus,
     };
@@ -476,16 +479,22 @@ export async function updateTicketStatus(
       updateData.closedAt = now;
     }
 
-    if (
-      ticket.status === "CLOSED" &&
-      nextStatus === "OPEN"
-    ) {
-      updateData.closedAt = null;
-    }
-
+   if (
+  ticket.status === "CLOSED" &&
+  nextStatus === "OPEN"
+) {
+  updateData.closedAt = null;
+  updateData.resolvedAt = null;
+  updateData.firstRespondedAt = null;
+  updateData.responseElapsedSeconds = 0;
+  updateData.slaRunningSince = now;
+}
     if (nextStatus === "PENDING") {
-      updateData.slaRunningSince = null;
-    }
+  updateData.responseElapsedSeconds =
+    currentElapsedSeconds;
+
+  updateData.slaRunningSince = null;
+}
 
     if (
       ticket.status === "PENDING" &&
