@@ -14,6 +14,7 @@ export type TicketFilters = {
   priority: TicketPriority | "";
   category: string;
   assigneeId: string;
+  archived: boolean;
   sortBy: "createdAt" | "priority" | "updatedAt";
   sortOrder: "asc" | "desc";
   page: number;
@@ -26,14 +27,18 @@ const DEFAULT_FILTERS: TicketFilters = {
   priority: "",
   category: "",
   assigneeId: "",
+  archived: false,
   sortBy: "createdAt",
   sortOrder: "desc",
   page: 1,
   pageSize: 5,
 };
 
-export function useTickets(initialFilters?: Partial<TicketFilters>) {
+export function useTickets(
+  initialFilters?: Partial<TicketFilters>
+) {
   const [tickets, setTickets] = useState<Ticket[]>([]);
+
   const [pagination, setPagination] =
     useState<TicketListResponse["data"]["pagination"]>({
       page: 1,
@@ -61,6 +66,7 @@ export function useTickets(initialFilters?: Partial<TicketFilters>) {
       params.set("pageSize", String(filters.pageSize));
       params.set("sortBy", filters.sortBy);
       params.set("sortOrder", filters.sortOrder);
+      params.set("archived", String(filters.archived));
 
       if (filters.search.trim()) {
         params.set("search", filters.search.trim());

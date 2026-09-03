@@ -11,6 +11,7 @@ import TicketHistory from "../components/ticket/TicketHistory";
 import TicketReplyForm from "../components/ticket/TicketReplyForm";
 import TicketCollaborators from "../components/ticket/TicketCollaborators";
 import EditTicketForm from "../components/ticket/EditTicketForm";
+import TicketArchiveActions from "../components/ticket/TicketArchiveActions";
 export default function TicketDetails() {
   const { id } = useParams<{ id: string }>();
   const [editing, setEditing] = useState(false);
@@ -35,7 +36,6 @@ export default function TicketDetails() {
     return (
       <div className="space-y-4">
         <TicketHeader subject="Ticket not found" />
-
         <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
           {error || "Ticket not found."}
         </div>
@@ -46,6 +46,9 @@ export default function TicketDetails() {
   return (
     <div className="space-y-6">
       <TicketHeader subject={ticket.subject} />
+      <div className="flex justify-end">
+        <TicketArchiveActions ticketId={ticket.id} />
+      </div>
         <div className="flex justify-end">
         {!editing && (
           <button

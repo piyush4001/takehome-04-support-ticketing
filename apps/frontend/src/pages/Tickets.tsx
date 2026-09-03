@@ -1,5 +1,5 @@
-import { Link } from "react-router-dom";
-
+import { useState } from "react";
+import {Link} from "react-router-dom";
 import TicketFilters from "../components/ticket/TicketFilters";
 import { useTickets } from "../hooks/useTickets";
 import type {
@@ -7,6 +7,7 @@ import type {
   TicketStatus,
 } from "../types/ticket";
 import { useAgents } from "../hooks/useAgents";
+import api from "../lib/api";
 
 function StatusBadge({ status }: { status: TicketStatus }) {
   const styles: Record<TicketStatus, string> = {
@@ -56,8 +57,45 @@ export default function Tickets() {
     error,
     updateFilters,
     setPage,
+    refetch,
   } = useTickets();
+
   const { agents } = useAgents();
+
+  const [restoringTicketId, setRestoringTicketId] =
+    useState<string | null>(null);
+
+  const [restoreError, setRestoreError] =
+    useState("");
+
+  async function handleRestore(ticketId: string) {
+    const confirmed = window.confirm(
+      "Are you sure you want to restore this ticket?"
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setRestoringTicketId(ticketId);
+      setRestoreError("");
+
+      await api.patch(
+        `/tickets/${ticketId}/restore`
+      );
+
+      await refetch();
+    } catch (error: any) {
+      setRestoreError(
+        error?.response?.data?.message ||
+          "Unable to restore ticket."
+      );
+    } finally {
+      setRestoringTicketId(null);
+    }
+  }
+
   return (
     <div className="mx-auto max-w-7xl">
       <header className="mb-6">
@@ -75,10 +113,18 @@ export default function Tickets() {
               Search, filter, and manage support tickets.
             </p>
           </div>
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-slate-500">
+              {pagination.total} total tickets
+            </span>
 
-          <span className="text-sm text-slate-500">
-            {pagination.total} total tickets
-          </span>
+            <Link
+              to="/tickets/new"
+              className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+            >
+              Create Ticket
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -87,6 +133,12 @@ export default function Tickets() {
         onChange={updateFilters}
         agents={agents}
       />
+
+      {restoreError && (
+        <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+          {restoreError}
+        </div>
+      )}
 
       <section className="mt-6 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         {loading ? (
@@ -139,6 +191,12 @@ export default function Tickets() {
                   <th className="px-5 py-3 text-xs font-bold uppercase tracking-wide text-slate-500">
                     Updated
                   </th>
+
+                  {filters.archived && (
+                    <th className="px-5 py-3 text-xs font-bold uppercase tracking-wide text-slate-500">
+                      Action
+                    </th>
+                  )}
                 </tr>
               </thead>
 
@@ -149,19 +207,31 @@ export default function Tickets() {
                     className="border-b border-slate-100 last:border-b-0 hover:bg-slate-50"
                   >
                     <td className="px-5 py-4">
-                      <Link
-                        to={`/tickets/${ticket.id}`}
-                        className="block max-w-xs"
-                      >
-                        <span className="block truncate font-semibold text-slate-900 hover:text-slate-600">
-                          {ticket.subject}
-                        </span>
+  {filters.archived ? (
+    <div className="block max-w-xs">
+      <span className="block truncate font-semibold text-slate-900">
+        {ticket.subject}
+      </span>
 
-                        <span className="mt-1 block truncate text-xs text-slate-400">
-                          {ticket.id}
-                        </span>
-                      </Link>
-                    </td>
+      <span className="mt-1 block truncate text-xs text-slate-400">
+        {ticket.id}
+      </span>
+    </div>
+  ) : (
+    <Link
+      to={`/tickets/${ticket.id}`}
+      className="block max-w-xs"
+    >
+      <span className="block truncate font-semibold text-slate-900 hover:text-slate-600">
+        {ticket.subject}
+      </span>
+
+      <span className="mt-1 block truncate text-xs text-slate-400">
+        {ticket.id}
+      </span>
+    </Link>
+  )}
+</td>
 
                     <td className="px-5 py-4">
                       <span className="block text-sm font-medium text-slate-700">
@@ -199,6 +269,25 @@ export default function Tickets() {
                         ticket.updatedAt
                       ).toLocaleDateString()}
                     </td>
+
+                    {filters.archived && (
+                      <td className="px-5 py-4">
+                        <button
+                          type="button"
+                          disabled={
+                            restoringTicketId === ticket.id
+                          }
+                          onClick={() =>
+                            handleRestore(ticket.id)
+                          }
+                          className="rounded-lg border border-green-200 bg-white px-3 py-2 text-sm font-semibold text-green-700 hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {restoringTicketId === ticket.id
+                            ? "Restoring..."
+                            : "Restore"}
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>

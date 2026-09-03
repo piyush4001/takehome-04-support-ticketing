@@ -92,17 +92,18 @@ export async function listTickets(
   userId: string,
   userRole: "AGENT" | "SUPERVISOR"
 ) {
-  const {
-    search,
-    status,
-    priority,
-    category,
-    assigneeId,
-    page,
-    pageSize,
-    sortBy,
-    sortOrder,
-  } = input;
+const {
+  search,
+  status,
+  priority,
+  category,
+  assigneeId,
+  archived,
+  page,
+  pageSize,
+  sortBy,
+  sortOrder,
+} = input;
 
   const where = buildTicketWhere({
   search,
@@ -113,7 +114,9 @@ export async function listTickets(
   userId,
   userRole,
 });
-
+where.archivedAt = archived
+  ? { not: null }
+  : null;
   // --------------------------------------------------
   // Role-based visibility
   // --------------------------------------------------

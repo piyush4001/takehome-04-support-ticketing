@@ -57,6 +57,11 @@ export const listTicketsSchema = z.object({
   .optional(),
 
   assigneeId: z.string().uuid().optional(),
+  archived: z
+  .string()
+  .optional()
+  .transform((value) => value === "true")
+  .default(false),
 
   page: z.coerce
     .number()

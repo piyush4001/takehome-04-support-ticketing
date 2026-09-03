@@ -38,6 +38,41 @@ export default function TicketFilters({
 }: TicketFiltersProps) {
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+      {/* Active / Archived */}
+      <div className="mb-4 flex gap-2">
+        <button
+          type="button"
+          onClick={() =>
+            onChange({
+              archived: false,
+            })
+          }
+          className={`rounded-lg px-4 py-2 text-sm font-semibold ${
+            !filters.archived
+              ? "bg-slate-900 text-white"
+              : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+          }`}
+        >
+          Active
+        </button>
+
+        <button
+          type="button"
+          onClick={() =>
+            onChange({
+              archived: true,
+            })
+          }
+          className={`rounded-lg px-4 py-2 text-sm font-semibold ${
+            filters.archived
+              ? "bg-slate-900 text-white"
+              : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+          }`}
+        >
+          Archived
+        </button>
+      </div>
+
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-5">
         <input
           type="search"
@@ -55,7 +90,8 @@ export default function TicketFilters({
           value={filters.status}
           onChange={(event) =>
             onChange({
-              status: event.target.value as TicketStatus | "",
+              status:
+                event.target.value as TicketStatus | "",
             })
           }
           className="rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
@@ -99,22 +135,23 @@ export default function TicketFilters({
           placeholder="Category"
           className="rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
         />
-        <select
-        value={filters.assigneeId}
-        onChange={(event) =>
-            onChange({
-            assigneeId: event.target.value,
-            })
-        }
-        className="rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
-        >
-        <option value="">All assignees</option>
 
-        {agents.map((agent) => (
+        <select
+          value={filters.assigneeId}
+          onChange={(event) =>
+            onChange({
+              assigneeId: event.target.value,
+            })
+          }
+          className="rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+        >
+          <option value="">All assignees</option>
+
+          {agents.map((agent) => (
             <option key={agent.id} value={agent.id}>
-            {agent.name}
+              {agent.name}
             </option>
-        ))}
+          ))}
         </select>
       </div>
 
@@ -127,14 +164,19 @@ export default function TicketFilters({
           value={filters.sortBy}
           onChange={(event) =>
             onChange({
-              sortBy: event.target.value as TicketFilterState["sortBy"],
+              sortBy:
+                event.target.value as TicketFilterState["sortBy"],
             })
           }
           className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
         >
-          <option value="createdAt">Created date</option>
+          <option value="createdAt">
+            Created date
+          </option>
           <option value="priority">Priority</option>
-          <option value="updatedAt">Last update</option>
+          <option value="updatedAt">
+            Last update
+          </option>
         </select>
 
         <select
@@ -160,6 +202,7 @@ export default function TicketFilters({
               priority: "",
               category: "",
               assigneeId: "",
+              archived: false,
               sortBy: "createdAt",
               sortOrder: "desc",
               page: 1,

@@ -11,6 +11,7 @@ import Dashboard from "./pages/Dashboard";
 import Tickets from "./pages/Tickets";
 import TicketDetails from "./pages/TicketDetails";
 import Layout from "./components/Layout";
+import CreateTicket from "./pages/CreateTicket";
 export default function App() {
   const [token, setToken] = useState(
     () => localStorage.getItem("token")
@@ -48,6 +49,7 @@ export default function App() {
     path="/login"
     element={<Navigate to="/dashboard" replace />}
   />
+  <Route path="/tickets/new" element={<CreateTicket />} />
 
   <Route
     path="*"
