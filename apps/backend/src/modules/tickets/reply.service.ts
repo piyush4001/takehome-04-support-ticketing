@@ -44,16 +44,26 @@ export async function createReply(
 
     const now = new Date();
 
+    const isPendingCustomerReply =
+      ticket.status === "PENDING" &&
+      input.type === "CUSTOMER_REPLY";
+
     const isFirstAgentResponse =
       userRole === "AGENT" &&
       input.type === "CUSTOMER_REPLY" &&
       !ticket.firstRespondedAt;
 
     const updateData: {
+      status?: "OPEN";
       firstRespondedAt?: Date;
       responseElapsedSeconds?: number;
       slaRunningSince?: Date | null;
     } = {};
+
+    if (isPendingCustomerReply) {
+      updateData.status = "OPEN";
+      updateData.slaRunningSince = now;
+    }
 
     // A customer-visible agent reply is the first response.
     if (isFirstAgentResponse) {
