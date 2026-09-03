@@ -12,6 +12,7 @@ import Tickets from "./pages/Tickets";
 import TicketDetails from "./pages/TicketDetails";
 import Layout from "./components/Layout";
 import CreateTicket from "./pages/CreateTicket";
+import SlaAlerts from "./pages/SlaAlerts";
 export default function App() {
   const [token, setToken] = useState(
     () => localStorage.getItem("token")
@@ -43,6 +44,8 @@ export default function App() {
       path="/tickets/:id"
       element={<TicketDetails />}
     />
+
+    <Route path="/alerts" element={<SlaAlerts />} />
   </Route>
 
   <Route

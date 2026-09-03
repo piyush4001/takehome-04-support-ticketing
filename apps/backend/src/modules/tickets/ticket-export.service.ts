@@ -23,6 +23,10 @@ export async function exportTicketsCsv(
     userRole,
   });
 
+  where.archivedAt = input.archived
+    ? { not: null }
+    : null;
+
   const tickets = await prisma.ticket.findMany({
     where,
 

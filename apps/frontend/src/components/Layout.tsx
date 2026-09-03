@@ -1,6 +1,9 @@
 import { NavLink, Outlet } from "react-router-dom";
+import { useSlaAlerts } from "../hooks/useSlaAlerts";
 
 export default function Layout() {
+  const { alerts } = useSlaAlerts();
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <aside className="fixed inset-y-0 left-0 hidden w-64 border-r border-slate-200 bg-white lg:block">
@@ -39,6 +42,24 @@ export default function Layout() {
             }
           >
             Tickets
+          </NavLink>
+
+          <NavLink
+            to="/alerts"
+            className={({ isActive }) =>
+              `mt-1 flex items-center justify-between rounded-lg px-4 py-2.5 text-sm font-semibold ${
+                isActive
+                  ? "bg-slate-100 text-slate-900"
+                  : "text-slate-600 hover:bg-slate-50"
+              }`
+            }
+          >
+            <span>Alerts</span>
+            {alerts.length > 0 && (
+              <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-bold text-red-700">
+                {alerts.length}
+              </span>
+            )}
           </NavLink>
         </nav>
       </aside>
