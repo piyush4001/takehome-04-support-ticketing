@@ -1,5 +1,5 @@
 import { useParams } from "react-router-dom";
-
+import { useState } from "react";
 import { useTicketDetails } from "../hooks/useTicketDetails";
 
 import TicketHeader from "../components/ticket/TicketHeader";
@@ -10,10 +10,10 @@ import TicketReplies from "../components/ticket/TicketReplies";
 import TicketHistory from "../components/ticket/TicketHistory";
 import TicketReplyForm from "../components/ticket/TicketReplyForm";
 import TicketCollaborators from "../components/ticket/TicketCollaborators";
-
+import EditTicketForm from "../components/ticket/EditTicketForm";
 export default function TicketDetails() {
   const { id } = useParams<{ id: string }>();
-
+  const [editing, setEditing] = useState(false);
  const {
   ticket,
   setTicket,
@@ -46,7 +46,25 @@ export default function TicketDetails() {
   return (
     <div className="space-y-6">
       <TicketHeader subject={ticket.subject} />
+        <div className="flex justify-end">
+        {!editing && (
+          <button
+            type="button"
+            onClick={() => setEditing(true)}
+            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+          >
+            Edit ticket
+          </button>
+        )}
+      </div>
 
+      {editing && (
+        <EditTicketForm
+          ticket={ticket}
+          onUpdated={setTicket}
+          onCancel={() => setEditing(false)}
+        />
+      )}
       <TicketMeta
         ticket={ticket}
         onUpdated={setTicket}

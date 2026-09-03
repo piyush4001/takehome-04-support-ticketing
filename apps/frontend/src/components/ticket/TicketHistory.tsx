@@ -10,7 +10,52 @@ function formatEventType(type: string) {
     .toLowerCase()
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
+function formatFieldName(field: string) {
+  return field
+    .replace(/([A-Z])/g, " $1")
+    .replace(/^./, (letter) => letter.toUpperCase());
+}
 
+function renderUpdateMetadata(metadata: unknown) {
+  if (
+    !metadata ||
+    typeof metadata !== "object" ||
+    Array.isArray(metadata)
+  ) {
+    return null;
+  }
+
+  const changes = metadata as Record<
+    string,
+    {
+      oldValue?: unknown;
+      newValue?: unknown;
+    }
+  >;
+
+  return (
+    <div className="mt-2 space-y-1 text-sm text-slate-600">
+      {Object.entries(changes).map(
+        ([field, change]) => (
+          <div key={field}>
+            <span className="font-medium text-slate-700">
+              {formatFieldName(field)}:
+            </span>{" "}
+            <span>
+              {String(change.oldValue ?? "")}
+            </span>
+            <span className="mx-2 text-slate-400">
+              →
+            </span>
+            <span>
+              {String(change.newValue ?? "")}
+            </span>
+          </div>
+        )
+      )}
+    </div>
+  );
+}
 export default function TicketHistory({
   events,
 }: TicketHistoryProps) {
@@ -60,29 +105,30 @@ export default function TicketHistory({
                   </span>
                 </div>
 
-                {(event.oldValue ||
-                  event.newValue) && (
-                  <div className="mt-2 text-sm text-slate-600">
-                    {event.oldValue && (
-                      <span className="font-medium">
-                        {event.oldValue}
-                      </span>
-                    )}
+                {event.type === "TICKET_UPDATED"
+  ? renderUpdateMetadata(event.metadata)
+  : (event.oldValue || event.newValue) && (
+      <div className="mt-2 text-sm text-slate-600">
+        {event.oldValue && (
+          <span className="font-medium">
+            {event.oldValue}
+          </span>
+        )}
 
-                    {event.oldValue &&
-                      event.newValue && (
-                        <span className="mx-2 text-slate-400">
-                          →
-                        </span>
-                      )}
+        {event.oldValue &&
+          event.newValue && (
+            <span className="mx-2 text-slate-400">
+              →
+            </span>
+          )}
 
-                    {event.newValue && (
-                      <span className="font-medium">
-                        {event.newValue}
-                      </span>
-                    )}
-                  </div>
-                )}
+        {event.newValue && (
+          <span className="font-medium">
+            {event.newValue}
+          </span>
+        )}
+      </div>
+    )}
               </div>
             ))}
           </div>

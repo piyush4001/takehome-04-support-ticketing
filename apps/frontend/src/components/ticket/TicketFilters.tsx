@@ -1,8 +1,8 @@
 import type {
   TicketPriority,
   TicketStatus,
-} from "../types/ticket";
-import type { TicketFilters as TicketFilterState } from "../hooks/useTickets";
+} from "../../types/ticket";
+import type { TicketFilters as TicketFilterState } from "../../hooks/useTickets";
 
 type TicketFiltersProps = {
   filters: TicketFilterState;

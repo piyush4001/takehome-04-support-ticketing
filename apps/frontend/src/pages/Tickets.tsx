@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 
-import TicketFilters from "../components/TicketFilters";
+import TicketFilters from "../components/ticket/TicketFilters";
 import { useTickets } from "../hooks/useTickets";
 import type {
   TicketPriority,

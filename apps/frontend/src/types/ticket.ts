@@ -92,14 +92,15 @@ export type TicketEvent = {
   ticketId: string;
   actorId: string | null;
   type:
-    | "TICKET_CREATED"
-    | "STATUS_CHANGED"
-    | "ASSIGNMENT_CHANGED"
-    | "COLLABORATOR_ADDED"
-    | "COLLABORATOR_REMOVED"
-    | "REPLY_ADDED"
-    | "ARCHIVED"
-    | "RESTORED";
+  | "TICKET_CREATED"
+  | "TICKET_UPDATED"
+  | "STATUS_CHANGED"
+  | "ASSIGNMENT_CHANGED"
+  | "COLLABORATOR_ADDED"
+  | "COLLABORATOR_REMOVED"
+  | "REPLY_ADDED"
+  | "ARCHIVED"
+  | "RESTORED";
   oldValue: string | null;
   newValue: string | null;
   metadata: unknown;

@@ -353,11 +353,47 @@ export async function updateTicket(
 
   canAccessTicket(ticket, userId, userRole);
 
-  return prisma.ticket.update({
-    where: {
-      id: ticketId,
-    },
-    data: input,
+  const changes: Record<
+    string,
+    {
+      oldValue: unknown;
+      newValue: unknown;
+    }
+  > = {};
+
+  for (const [field, newValue] of Object.entries(input)) {
+    const oldValue = ticket[field as keyof typeof ticket];
+
+    if (oldValue !== newValue) {
+      changes[field] = {
+        oldValue,
+        newValue,
+      };
+    }
+  }
+
+  if (Object.keys(changes).length === 0) {
+    return ticket;
+  }
+
+  return prisma.$transaction(async (tx) => {
+    const updatedTicket = await tx.ticket.update({
+      where: {
+        id: ticketId,
+      },
+      data: input,
+    });
+
+    await tx.ticketEvent.create({
+      data: {
+        ticketId,
+        actorId: userId,
+        type: "TICKET_UPDATED",
+        metadata: changes as unknown as Prisma.InputJsonValue,
+      },
+    });
+
+    return updatedTicket;
   });
 }
 
