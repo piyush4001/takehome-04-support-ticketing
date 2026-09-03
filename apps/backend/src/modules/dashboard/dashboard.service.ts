@@ -1,4 +1,8 @@
 import { prisma } from "../../lib/prisma.js";
+import {
+  calculateResponseElapsedSeconds,
+  getSlaState,
+} from "../sla/sla.service.js";
 
 export async function getDashboard() {
   const now = new Date();
@@ -41,21 +45,31 @@ export async function getDashboard() {
     prisma.ticket.count({
       where: {
         archivedAt: null,
-        status: "RESOLVED",
         resolvedAt: {
           gte: startOfWeek,
         },
       },
     }),
 
-    prisma.sLAAlert.count({
+    // Fetch active tickets that are currently running their
+    // first-response SLA clock.
+    prisma.ticket.findMany({
       where: {
-        type: "BREACHED",
-        acknowledgedAt: null,
-        resolvedAt: null,
-        ticket: {
-          archivedAt: null,
+        archivedAt: null,
+        status: {
+          in: ["NEW", "OPEN"],
         },
+        firstRespondedAt: null,
+        slaRunningSince: {
+          not: null,
+        },
+      },
+      select: {
+        id: true,
+        responseTargetSeconds: true,
+        responseElapsedSeconds: true,
+        slaRunningSince: true,
+        firstRespondedAt: true,
       },
     }),
 
@@ -82,7 +96,6 @@ export async function getDashboard() {
     prisma.ticket.findMany({
       where: {
         archivedAt: null,
-        status: "RESOLVED",
         resolvedAt: {
           gte: eightWeeksAgo,
         },
@@ -92,6 +105,23 @@ export async function getDashboard() {
       },
     }),
   ]);
+
+  // Calculate the actual number of currently breached tickets.
+  // This does not depend on whether an SLA alert has been
+  // created or acknowledged.
+  const breachingTicketCount = breachingTickets.filter((ticket) => {
+    const elapsedSeconds = calculateResponseElapsedSeconds(
+      ticket,
+      now
+    );
+
+    return (
+      getSlaState(
+        elapsedSeconds,
+        ticket.responseTargetSeconds
+      ) === "BREACHED"
+    );
+  }).length;
 
   const agentIds = agentBreakdown.map(
     (agent) => agent.primaryAssigneeId
@@ -119,12 +149,16 @@ export async function getDashboard() {
     { length: 8 },
     (_, index) => {
       const weekStart = new Date(eightWeeksAgo);
+
       weekStart.setDate(
         weekStart.getDate() + index * 7
       );
 
       const weekEnd = new Date(weekStart);
-      weekEnd.setDate(weekEnd.getDate() + 7);
+
+      weekEnd.setDate(
+        weekEnd.getDate() + 7
+      );
 
       const count = resolvedEvents.filter((ticket) => {
         if (!ticket.resolvedAt) return false;
@@ -148,7 +182,7 @@ export async function getDashboard() {
       openTickets,
       pendingTickets,
       resolvedThisWeek,
-      breachingTickets,
+      breachingTickets: breachingTicketCount,
     },
 
     statusBreakdown: statusBreakdown.map((item) => ({
