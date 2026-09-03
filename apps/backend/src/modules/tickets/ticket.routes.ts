@@ -6,6 +6,8 @@ import {
   getTicketById,
   updateTicket,
   updateTicketStatus,
+  archiveTicket,
+  restoreTicket,
 } from "./ticket.controller.js";
 import {
   createReply,
@@ -45,6 +47,17 @@ router.post(
   "/bulk/close",
   authenticate,
   bulkClose
+);
+router.patch(
+  "/:id/archive",
+  authenticate,
+  archiveTicket
+);
+
+router.patch(
+  "/:id/restore",
+  authenticate,
+  restoreTicket
 );
 router.get(
   "/:id",

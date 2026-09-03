@@ -11,7 +11,11 @@ import { listTickets as listTicketsService } from "./ticket.service.js";
 import { getTicketById as getTicketByIdService } from "./ticket.service.js";
 import { updateTicketSchema} from "./ticket.validation.js";
 import { updateTicket as updateTicketService } from "./ticket.service.js";
-import { updateTicketStatus as updateTicketStatusService } from "./ticket.service.js";
+import {
+  updateTicketStatus as updateTicketStatusService,
+  archiveTicket as archiveTicketService,
+  restoreTicket as restoreTicketService,
+} from "./ticket.service.js";
 
 import { exportTicketsSchema } from "./ticket.validation.js";
 import { exportTicketsCsv } from "./ticket-export.service.js";
@@ -195,7 +199,79 @@ export async function updateTicketStatus(
     next(error);
   }
 }
+export async function archiveTicket(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required",
+      });
+    }
 
+    const { id: ticketId } = req.params;
+
+    if (!ticketId || Array.isArray(ticketId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid ticket ID",
+      });
+    }
+
+    const ticket = await archiveTicketService(
+      ticketId,
+      req.user.userId,
+      req.user.role
+    );
+
+    return res.status(200).json({
+      success: true,
+      data: ticket,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function restoreTicket(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required",
+      });
+    }
+
+    const { id: ticketId } = req.params;
+
+    if (!ticketId || Array.isArray(ticketId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid ticket ID",
+      });
+    }
+
+    const ticket = await restoreTicketService(
+      ticketId,
+      req.user.userId,
+      req.user.role
+    );
+
+    return res.status(200).json({
+      success: true,
+      data: ticket,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
 export async function exportTicketsCsvController(
   req: Request,
   res: Response,

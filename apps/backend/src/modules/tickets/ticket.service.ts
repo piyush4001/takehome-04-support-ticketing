@@ -415,6 +415,8 @@ export async function updateTicketStatus(
         "This ticket can no longer be reopened"
       );
     }
+
+    
   }
 
   const now = new Date();
@@ -489,5 +491,103 @@ const currentElapsedSeconds =
     });
 
     return updatedTicket;
+  });
+}
+
+export async function archiveTicket(
+  ticketId: string,
+  userId: string,
+  userRole: "AGENT" | "SUPERVISOR"
+) {
+  const ticket = await prisma.ticket.findUnique({
+    where: {
+      id: ticketId,
+    },
+    include: {
+      collaborators: {
+        select: {
+          userId: true,
+        },
+      },
+    },
+  });
+
+  if (!ticket || ticket.archivedAt) {
+    throw new AppError(404, "Ticket not found");
+  }
+
+  canAccessTicket(ticket, userId, userRole);
+
+  const now = new Date();
+
+  return prisma.$transaction(async (tx) => {
+    const archivedTicket = await tx.ticket.update({
+      where: {
+        id: ticketId,
+      },
+      data: {
+        archivedAt: now,
+      },
+    });
+
+    await tx.ticketEvent.create({
+      data: {
+        ticketId,
+        actorId: userId,
+        type: "ARCHIVED",
+        oldValue: ticket.status,
+        newValue: "ARCHIVED",
+      },
+    });
+
+    return archivedTicket;
+  });
+}
+
+export async function restoreTicket(
+  ticketId: string,
+  userId: string,
+  userRole: "AGENT" | "SUPERVISOR"
+) {
+  const ticket = await prisma.ticket.findUnique({
+    where: {
+      id: ticketId,
+    },
+    include: {
+      collaborators: {
+        select: {
+          userId: true,
+        },
+      },
+    },
+  });
+
+  if (!ticket || !ticket.archivedAt) {
+    throw new AppError(404, "Archived ticket not found");
+  }
+
+  canAccessTicket(ticket, userId, userRole);
+
+  return prisma.$transaction(async (tx) => {
+    const restoredTicket = await tx.ticket.update({
+      where: {
+        id: ticketId,
+      },
+      data: {
+        archivedAt: null,
+      },
+    });
+
+    await tx.ticketEvent.create({
+      data: {
+        ticketId,
+        actorId: userId,
+        type: "RESTORED",
+        oldValue: "ARCHIVED",
+        newValue: ticket.status,
+      },
+    });
+
+    return restoredTicket;
   });
 }
