@@ -64,32 +64,39 @@ export function buildTicketWhere(
   }
 
   // Search
-  if (search) {
-    where.AND = [
-      {
-        OR: [
-          {
-            subject: {
-              contains: search,
-              mode: "insensitive",
-            },
+  // Search
+if (search) {
+  where.AND = [
+    {
+      OR: [
+        {
+          subject: {
+            contains: search,
+            mode: "insensitive",
           },
-          {
-            requesterName: {
-              contains: search,
-              mode: "insensitive",
-            },
+        },
+        {
+          description: {
+            contains: search,
+            mode: "insensitive",
           },
-          {
-            requesterEmail: {
-              contains: search,
-              mode: "insensitive",
-            },
+        },
+        {
+          requesterName: {
+            contains: search,
+            mode: "insensitive",
           },
-        ],
-      },
-    ];
-  }
+        },
+        {
+          requesterEmail: {
+            contains: search,
+            mode: "insensitive",
+          },
+        },
+      ],
+    },
+  ];
+}
 
   return where;
 }

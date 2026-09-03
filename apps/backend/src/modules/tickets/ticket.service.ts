@@ -155,38 +155,6 @@ export async function listTickets(
   if (assigneeId) {
     where.primaryAssigneeId = assigneeId;
   }
-
-  // --------------------------------------------------
-  // Search
-  // --------------------------------------------------
-
-  if (search) {
-    where.AND = [
-      {
-        OR: [
-          {
-            subject: {
-              contains: search,
-              mode: "insensitive",
-            },
-          },
-          {
-            requesterName: {
-              contains: search,
-              mode: "insensitive",
-            },
-          },
-          {
-            requesterEmail: {
-              contains: search,
-              mode: "insensitive",
-            },
-          },
-        ],
-      },
-    ];
-  }
-
   // --------------------------------------------------
   // Pagination
   // --------------------------------------------------
