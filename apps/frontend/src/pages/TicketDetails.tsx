@@ -223,7 +223,7 @@ export default function TicketDetails() {
             lg:max-h-[calc(100vh-3rem)]
             lg:overflow-y-auto
             lg:pr-1
-            lg:[scrollbar-width:thin]
+            lg:scrollbar-thin
           "
         >
           <div className="space-y-5">

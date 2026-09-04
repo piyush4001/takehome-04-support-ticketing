@@ -6,7 +6,6 @@ import {
   ChevronDown,
   Download,
   Loader2,
-  RotateCcw,
   UserRound,
   X,
 } from "lucide-react";

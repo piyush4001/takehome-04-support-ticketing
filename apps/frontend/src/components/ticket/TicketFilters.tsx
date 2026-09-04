@@ -108,7 +108,7 @@ export default function TicketFilters({
                 archived: false,
               })
             }
-            className={`inline-flex min-w-[100px] items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition ${
+            className={`inline-flex min-w-25 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition ${
               !filters.archived
                 ? "bg-white text-[#173b67] shadow-sm"
                 : "text-slate-500 hover:text-slate-700"
@@ -125,7 +125,7 @@ export default function TicketFilters({
                 archived: true,
               })
             }
-            className={`inline-flex min-w-[100px] items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition ${
+            className={`inline-flex min-w-25 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition ${
               filters.archived
                 ? "bg-white text-[#173b67] shadow-sm"
                 : "text-slate-500 hover:text-slate-700"
@@ -302,7 +302,7 @@ export default function TicketFilters({
             </span>
           </div>
 
-          <div className="relative sm:min-w-[170px]">
+          <div className="relative sm:min-w-42.5">
             <select
               value={filters.sortBy}
               onChange={(event) =>
@@ -321,7 +321,7 @@ export default function TicketFilters({
             <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           </div>
 
-          <div className="relative sm:min-w-[150px]">
+          <div className="relative sm:min-w-37.5">
             <select
               value={filters.sortOrder}
               onChange={(event) =>

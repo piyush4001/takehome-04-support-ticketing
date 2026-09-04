@@ -1,10 +1,7 @@
 import { useState } from "react";
 import {
   Archive,
-  ChevronRight,
-  Download,
   Plus,
-  RefreshCw,
   Ticket as TicketIcon,
 } from "lucide-react";
 import { Link } from "react-router-dom";
