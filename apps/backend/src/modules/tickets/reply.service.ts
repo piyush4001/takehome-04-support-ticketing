@@ -1,6 +1,12 @@
 import { prisma } from "../../lib/prisma.js";
 import { AppError } from "../../utils/app.error.js";
+import {
+  calculateResponseElapsedSeconds,
+} from "../sla/sla.service.js";
 import { canAccessTicket } from "./ticket.authorization.js";
+import {
+  validateStatusTransition,
+} from "./ticket.lifecycle.js";
 import type { CreateReplyInput } from "./ticket.validation.js";
 
 export async function createReply(
@@ -51,6 +57,7 @@ export async function createReply(
     const isFirstAgentResponse =
       userRole === "AGENT" &&
       input.type === "CUSTOMER_REPLY" &&
+      !isPendingCustomerReply &&
       !ticket.firstRespondedAt;
 
     const updateData: {
@@ -61,7 +68,10 @@ export async function createReply(
     } = {};
 
     if (isPendingCustomerReply) {
+      validateStatusTransition(ticket.status, "OPEN");
       updateData.status = "OPEN";
+      updateData.responseElapsedSeconds =
+        calculateResponseElapsedSeconds(ticket, now);
       updateData.slaRunningSince = now;
     }
 
@@ -94,6 +104,18 @@ export async function createReply(
           id: ticketId,
         },
         data: updateData,
+      });
+    }
+
+    if (isPendingCustomerReply) {
+      await tx.ticketEvent.create({
+        data: {
+          ticketId,
+          actorId: userId,
+          type: "STATUS_CHANGED",
+          oldValue: "PENDING",
+          newValue: "OPEN",
+        },
       });
     }
 
