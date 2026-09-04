@@ -1,14 +1,5 @@
 # Decisions
 
-Log the decisions that actually shaped this codebase — the ones where a real alternative existed and
-you picked one. At least five entries. For each: what you chose, what you rejected, and why. At least
-one entry must be a decision you later reversed — say what changed your mind. It can be any entry
-below, not necessarily the last one; add a **Later reversed:** line to whichever one it is.
-
-
-
-# Decisions
-
 ## Decision 1
 
 * **Chose:** Use a modular monolith with React + TypeScript, Node.js + Express + TypeScript, Prisma, and PostgreSQL.
@@ -23,18 +14,19 @@ below, not necessarily the last one; add a **Later reversed:** line to whichever
 
 ## Decision 3
 
-- **Chose:**
-- **Rejected:**
-- **Why:**
+- **Chose:** Enforce authentication, role checks, and ticket ownership/collaboration authorization on the server with JWT middleware and service-level checks.
+- **Rejected:** Relying on frontend role checks or hidden buttons as the permission boundary.
+- **Why:** The browser controls presentation only; the backend must independently protect dashboard access, ticket operations, replies, collaborators, and SLA acknowledgement actions.
 
 ## Decision 4
 
-- **Chose:**
-- **Rejected:**
-- **Why:**
+- **Chose:** Keep exactly one primary assignee on `Ticket` and model additional agents through the `TicketCollaborator` many-to-many join table.
+- **Rejected:** Multiple equal assignees or a list/JSON field embedded in `Ticket`.
+- **Why:** The queue needs a clear owner for assignment and SLA visibility, while the join table supports many collaborators, composite uniqueness, relational queries, and ticket-level authorization.
 
 ## Decision 5
 
-- **Chose:**
-- **Rejected:**
-- **Why:**
+- **Chose:** Store `responseTargetSeconds`, `responseElapsedSeconds`, and `slaRunningSince` on `Ticket` to represent the response SLA as accumulated active time plus a current running segment.
+- **Rejected:** Recalculating the entire response duration from ticket timestamps on every request, which would not represent Pending pauses cleanly.
+- **Why:** Persisted active-time state makes the Pending pause explicit, lets Open resume from the accumulated value, and gives the SLA worker a stable state to evaluate.
+- **Later reversed:** The initial customer-reply implementation reopened Pending and started a new running segment, but it still allowed the ordinary first-response path to interfere with that state. During implementation review, it was changed to preserve elapsed time explicitly, exclude that path for a Pending customer reply, validate `PENDING → OPEN`, and record the automatic status event in the same transaction.
