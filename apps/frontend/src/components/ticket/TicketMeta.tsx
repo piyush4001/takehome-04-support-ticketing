@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 
 import api from "../../lib/api";
+import { getApiErrorMessage } from "../../lib/api-error";
 import type {
   TicketDetails as TicketDetailsType,
   TicketDetailsResponse,
@@ -99,10 +100,9 @@ export default function TicketMeta({
       );
 
       onUpdated(response.data.data);
-    } catch (error: any) {
+    } catch (error: unknown) {
       setStatusError(
-        error?.response?.data?.message ||
-          "Unable to update ticket status."
+        getApiErrorMessage(error, "Unable to update ticket status.")
       );
     } finally {
       setStatusLoading(false);

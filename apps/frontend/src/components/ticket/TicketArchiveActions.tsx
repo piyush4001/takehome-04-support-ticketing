@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Archive, AlertCircle, Loader2 } from "lucide-react";
 import api from "../../lib/api";
+import { getApiErrorMessage } from "../../lib/api-error";
 
 type TicketArchiveActionsProps = {
   ticketId: string;
@@ -31,10 +32,8 @@ export default function TicketArchiveActions({
       await api.patch(`/tickets/${ticketId}/archive`);
 
       navigate("/tickets");
-    } catch (error: any) {
-      setError(
-        error?.response?.data?.message || "Unable to archive ticket."
-      );
+    } catch (error: unknown) {
+      setError(getApiErrorMessage(error, "Unable to archive ticket."));
     } finally {
       setLoading(false);
     }

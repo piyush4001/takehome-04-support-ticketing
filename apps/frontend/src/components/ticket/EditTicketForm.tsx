@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { AlertCircle, Loader2, Save, X } from "lucide-react";
 import api from "../../lib/api";
+import { getApiErrorMessage } from "../../lib/api-error";
 import type {
   TicketDetails as TicketDetailsType,
   TicketDetailsResponse,
@@ -36,6 +37,8 @@ export default function EditTicketForm({
   const [error, setError] = useState("");
 
   useEffect(() => {
+    // This effect intentionally mirrors the current ticket into the editable form.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSubject(ticket.subject);
     setDescription(ticket.description);
     setRequesterName(ticket.requesterName);
@@ -66,10 +69,8 @@ export default function EditTicketForm({
 
       onUpdated(response.data.data);
       onCancel();
-    } catch (error: any) {
-      setError(
-        error?.response?.data?.message || "Unable to update ticket."
-      );
+    } catch (error: unknown) {
+      setError(getApiErrorMessage(error, "Unable to update ticket."));
     } finally {
       setLoading(false);
     }

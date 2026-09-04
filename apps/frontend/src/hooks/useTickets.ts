@@ -102,6 +102,8 @@ export function useTickets(
   }, [filters]);
 
   useEffect(() => {
+    // This effect intentionally starts the request when ticket filters change.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void fetchTickets();
   }, [fetchTickets]);
 

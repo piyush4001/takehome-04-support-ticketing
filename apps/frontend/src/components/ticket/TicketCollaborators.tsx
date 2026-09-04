@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 
 import api from "../../lib/api";
+import { getApiErrorMessage } from "../../lib/api-error";
 import { useAgents } from "../../hooks/useAgents";
 import type {
   TicketDetails as TicketDetailsType,
@@ -54,10 +55,8 @@ export default function TicketCollaborators({
 
       await refreshTicket();
       setSelectedCollaborator("");
-    } catch (error: any) {
-      setError(
-        error?.response?.data?.message || "Unable to add collaborator."
-      );
+    } catch (error: unknown) {
+      setError(getApiErrorMessage(error, "Unable to add collaborator."));
     } finally {
       setLoading(false);
     }
@@ -73,10 +72,8 @@ export default function TicketCollaborators({
       );
 
       await refreshTicket();
-    } catch (error: any) {
-      setError(
-        error?.response?.data?.message || "Unable to remove collaborator."
-      );
+    } catch (error: unknown) {
+      setError(getApiErrorMessage(error, "Unable to remove collaborator."));
     } finally {
       setRemovingUserId("");
     }

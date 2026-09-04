@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 
 import api from "../../lib/api";
+import { getApiErrorMessage } from "../../lib/api-error";
 import type {
   TicketDetails as TicketDetailsType,
   TicketDetailsResponse,
@@ -57,10 +58,8 @@ export default function TicketReplyForm({
 
       setReplyBody("");
       setSuccess("Reply added successfully.");
-    } catch (error: any) {
-      setError(
-        error?.response?.data?.message || "Unable to add reply."
-      );
+    } catch (error: unknown) {
+      setError(getApiErrorMessage(error, "Unable to add reply."));
     } finally {
       setLoading(false);
     }

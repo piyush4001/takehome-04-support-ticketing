@@ -37,6 +37,8 @@ export function useTicketDetails(id?: string) {
   }, [id]);
 
   useEffect(() => {
+    // This effect intentionally starts the request when the ticket id changes.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void fetchTicket();
   }, [fetchTicket]);
 

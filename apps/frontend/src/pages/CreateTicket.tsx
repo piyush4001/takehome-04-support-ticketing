@@ -13,6 +13,7 @@ import {
 import { type FormEvent, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../lib/api";
+import { getApiErrorMessage } from "../lib/api-error";
 import { useAgents } from "../hooks/useAgents";
 import type { TicketPriority } from "../types/ticket";
 
@@ -70,10 +71,8 @@ export default function CreateTicket() {
       const createdTicket = response.data.data;
 
       navigate(`/tickets/${createdTicket.id}`);
-    } catch (error: any) {
-      setError(
-        error?.response?.data?.message || "Unable to create ticket."
-      );
+    } catch (error: unknown) {
+      setError(getApiErrorMessage(error, "Unable to create ticket."));
     } finally {
       setLoading(false);
     }
