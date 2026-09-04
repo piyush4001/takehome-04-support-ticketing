@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Archive, AlertCircle, Loader2 } from "lucide-react";
 import api from "../../lib/api";
 
 type TicketArchiveActionsProps = {
@@ -32,8 +33,7 @@ export default function TicketArchiveActions({
       navigate("/tickets");
     } catch (error: any) {
       setError(
-        error?.response?.data?.message ||
-          "Unable to archive ticket."
+        error?.response?.data?.message || "Unable to archive ticket."
       );
     } finally {
       setLoading(false);
@@ -46,15 +46,28 @@ export default function TicketArchiveActions({
         type="button"
         onClick={handleArchive}
         disabled={loading}
-        className="rounded-lg border border-red-200 bg-white px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+        className="inline-flex items-center justify-center gap-2 rounded-lg border border-red-200 bg-white px-4 py-2.5 text-sm font-semibold text-red-700 shadow-sm transition hover:border-red-300 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500/20 disabled:cursor-not-allowed disabled:opacity-50"
       >
-        {loading ? "Archiving..." : "Archive ticket"}
+        {loading ? (
+          <>
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Archiving...
+          </>
+        ) : (
+          <>
+            <Archive className="h-4 w-4" />
+            Archive ticket
+          </>
+        )}
       </button>
 
       {error && (
-        <p className="text-sm text-red-600">
-          {error}
-        </p>
+        <div className="flex max-w-xs items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-left">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-600" />
+          <p className="text-xs font-medium leading-5 text-red-700">
+            {error}
+          </p>
+        </div>
       )}
     </div>
   );
