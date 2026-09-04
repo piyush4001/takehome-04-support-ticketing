@@ -61,7 +61,7 @@ export default function TicketTable({
         </div>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1000px]">
+          <table className="w-full min-w-250">
             <thead>
               <tr className="border-b border-slate-200 bg-slate-50/80 text-left">
                 <th className="w-14 px-5 py-3.5">
@@ -155,7 +155,7 @@ export default function TicketTable({
                     </td>
 
                     <td className="px-5 py-4">
-                      <div className="max-w-[180px]">
+                      <div className="max-w-45">
                         <span className="block truncate text-sm font-medium text-slate-700">
                           {ticket.requesterName}
                         </span>
@@ -174,7 +174,7 @@ export default function TicketTable({
                     </td>
 
                     <td className="px-5 py-4">
-                      <span className="inline-flex max-w-[140px] truncate rounded-md bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
+                      <span className="inline-flex max-w-35 truncate rounded-md bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
                         {ticket.category}
                       </span>
                     </td>
@@ -192,7 +192,7 @@ export default function TicketTable({
                             : "—"}
                         </div>
 
-                        <span className="max-w-[120px] truncate text-sm font-medium text-slate-700">
+                        <span className="max-w-30 truncate text-sm font-medium text-slate-700">
                           {ticket.primaryAssignee?.name ?? "Unassigned"}
                         </span>
                       </div>

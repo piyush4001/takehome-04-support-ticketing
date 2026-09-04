@@ -252,7 +252,7 @@ export default function TicketFilters({
                     category: event.target.value,
                   })
                 }
-                placeholder="Category"
+                placeholder="Search category..."
                 className={`${inputClassName} pl-10`}
               />
             </div>

@@ -149,11 +149,11 @@ where.archivedAt = archived
   }
 
   if (category) {
-    where.category = {
-      equals: category,
-      mode: "insensitive",
-    };
-  }
+  where.category = {
+    contains: category.trim(),
+    mode: "insensitive",
+  };
+}
 
   if (assigneeId) {
     where.primaryAssigneeId = assigneeId;
