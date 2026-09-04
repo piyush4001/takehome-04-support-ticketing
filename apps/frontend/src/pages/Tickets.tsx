@@ -7,6 +7,7 @@ import TicketTable from "../components/ticket/TicketTable";
 import { useAgents } from "../hooks/useAgents";
 import { useTickets } from "../hooks/useTickets";
 import api from "../lib/api";
+import { useAuth } from "../auth/useAuth";
 
 function getErrorMessage(error: unknown, fallback: string) {
   return (
@@ -16,6 +17,7 @@ function getErrorMessage(error: unknown, fallback: string) {
 }
 
 export default function Tickets() {
+  const { user } = useAuth();
   const { tickets, pagination, filters, loading, error, updateFilters, setPage, refetch } = useTickets();
   const { agents } = useAgents();
   const [restoringTicketId, setRestoringTicketId] = useState<string | null>(null);
@@ -109,7 +111,7 @@ export default function Tickets() {
       </header>
       <TicketFilters filters={filters} onChange={updateFilters} agents={agents} />
       {exportError && <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{exportError}</div>}
-      <TicketBulkActions selectedTicketIds={selectedTicketIds} bulkAction={bulkAction} selectedAssigneeId={selectedAssigneeId} bulkLoading={bulkLoading} bulkError={bulkError} bulkResults={bulkResults} exporting={exporting} agents={agents} onExportCsv={handleExportCsv} onOpenBulkReassign={openBulkReassign} onOpenBulkClose={openBulkClose} onClearSelection={clearSelection} onSelectedAssigneeChange={setSelectedAssigneeId} onBulkReassign={handleBulkReassign} onBulkClose={handleBulkClose} onCancelReassign={() => { setBulkAction(null); setSelectedAssigneeId(""); }} onCancelClose={() => setBulkAction(null)} />
+      <TicketBulkActions selectedTicketIds={selectedTicketIds} bulkAction={bulkAction} selectedAssigneeId={selectedAssigneeId} bulkLoading={bulkLoading} bulkError={bulkError} bulkResults={bulkResults} exporting={exporting} agents={agents} canReassign={user?.role === "SUPERVISOR"} onExportCsv={handleExportCsv} onOpenBulkReassign={openBulkReassign} onOpenBulkClose={openBulkClose} onClearSelection={clearSelection} onSelectedAssigneeChange={setSelectedAssigneeId} onBulkReassign={handleBulkReassign} onBulkClose={handleBulkClose} onCancelReassign={() => { setBulkAction(null); setSelectedAssigneeId(""); }} onCancelClose={() => setBulkAction(null)} />
       {restoreError && <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{restoreError}</div>}
       <TicketTable tickets={tickets} archived={filters.archived} loading={loading} error={error} selectedTicketIds={selectedTicketIds} allCurrentPageSelected={allCurrentPageSelected} restoringTicketId={restoringTicketId} onToggleTicketSelection={toggleTicketSelection} onToggleSelectAll={toggleSelectAll} onRestore={handleRestore} />
       <TicketPagination page={pagination.page} totalPages={pagination.totalPages} onSetPage={setPage} />

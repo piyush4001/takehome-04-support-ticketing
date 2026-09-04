@@ -15,6 +15,7 @@ type TicketBulkActionsProps = {
   bulkResults: BulkResult[];
   exporting: boolean;
   agents: TicketUser[];
+  canReassign: boolean;
   onExportCsv: () => void;
   onOpenBulkReassign: () => void;
   onOpenBulkClose: () => void;
@@ -35,6 +36,7 @@ export default function TicketBulkActions({
   bulkResults,
   exporting,
   agents,
+  canReassign,
   onExportCsv,
   onOpenBulkReassign,
   onOpenBulkClose,
@@ -64,9 +66,11 @@ export default function TicketBulkActions({
           <button type="button" onClick={onExportCsv} disabled={exporting} className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50">
             {exporting ? "Exporting..." : "Export CSV"}
           </button>
-          <button type="button" onClick={onOpenBulkReassign} disabled={bulkLoading} className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50">
-            Bulk Reassign
-          </button>
+          {canReassign && (
+            <button type="button" onClick={onOpenBulkReassign} disabled={bulkLoading} className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50">
+              Bulk Reassign
+            </button>
+          )}
           <button type="button" onClick={onOpenBulkClose} disabled={bulkLoading} className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50">
             Bulk Close
           </button>

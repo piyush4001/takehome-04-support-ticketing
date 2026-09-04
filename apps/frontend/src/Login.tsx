@@ -1,7 +1,11 @@
 import { type FormEvent, useState } from "react";
 import api from "./lib/api";
+import type { LoginResponse } from "./types/auth";
 type LoginProps = {
-  onLogin: (token: string) => void;
+  onLogin: (
+    token: string,
+    user: LoginResponse["data"]["user"]
+  ) => void;
 };
 export default function Login({ onLogin }: LoginProps) {
   const [email, setEmail] = useState("supervisor@example.com");
@@ -15,15 +19,15 @@ export default function Login({ onLogin }: LoginProps) {
     setLoading(true);
 
     try {
-     const response = await api.post("/auth/login", {
+      const response = await api.post<LoginResponse>("/auth/login", {
         email,
         password,
       });
 
-      const token = response.data.data.token;
-
-      localStorage.setItem("token", token);
-      onLogin(token);
+      onLogin(
+        response.data.data.token,
+        response.data.data.user
+      );
     } catch {
       setError("Invalid email or password.");
     } finally {
