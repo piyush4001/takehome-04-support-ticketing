@@ -63,40 +63,26 @@ export function buildTicketWhere(
     where.primaryAssigneeId = assigneeId;
   }
 
-  // Search
-  // Search
-if (search) {
-  where.AND = [
-    {
-      OR: [
-        {
-          subject: {
-            contains: search,
-            mode: "insensitive",
+  if (search) {
+    where.AND = [
+      {
+        OR: [
+          {
+            subject: {
+              contains: search,
+              mode: "insensitive",
+            },
           },
-        },
-        {
-          description: {
-            contains: search,
-            mode: "insensitive",
+          {
+            description: {
+              contains: search,
+              mode: "insensitive",
+            },
           },
-        },
-        {
-          requesterName: {
-            contains: search,
-            mode: "insensitive",
-          },
-        },
-        {
-          requesterEmail: {
-            contains: search,
-            mode: "insensitive",
-          },
-        },
-      ],
-    },
-  ];
-}
+        ],
+      },
+    ];
+  }
 
   return where;
 }

@@ -36,11 +36,13 @@ export type CreateTicketInput = z.infer<
 >;
 
 export const listTicketsSchema = z.object({
-  search: z
-  .string()
-  .trim()
-  .min(1)
-  .optional(),
+  search: z.preprocess(
+    (value) =>
+      typeof value === "string" && value.trim()
+        ? value.trim()
+        : undefined,
+    z.string().min(1).optional()
+  ),
 
   status: z
     .enum(["NEW", "OPEN", "PENDING", "RESOLVED", "CLOSED"])

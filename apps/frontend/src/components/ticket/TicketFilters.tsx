@@ -82,7 +82,7 @@ export default function TicketFilters({
               search: event.target.value,
             })
           }
-          placeholder="Search tickets..."
+          placeholder="Search subject or description..."
           className="rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
         />
 
