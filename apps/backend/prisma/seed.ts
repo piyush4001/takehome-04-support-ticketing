@@ -320,6 +320,7 @@ const tickets: TicketSeed[] = [
     assignee: "alice",
     lifecycle: ["NEW", "OPEN", "RESOLVED", "CLOSED"],
     archived: true,
+    collaborators: ["diana"],
   },
   {
     number: 16,
@@ -436,6 +437,30 @@ async function main() {
   for (const [key, data] of Object.entries(users) as [keyof typeof users, (typeof users)[keyof typeof users]][]) {
     seededUsers[key] = await upsertUser(data, passwordHash);
   }
+
+  const seedOwnedChildPrefixes = ["00000000-0000-4000-8000-0002", "00000000-0000-4000-8000-0003", "00000000-0000-4000-8000-0004", "00000000-0000-4000-8000-0005", "00000000-0000-4000-8000-0006", "00000000-0000-4000-8000-0007"];
+  await prisma.ticketEvent.deleteMany({
+    where: {
+      id: { startsWith: "00000000-0000-4000-8000-0002" },
+    },
+  });
+  await prisma.ticketEvent.deleteMany({
+    where: {
+      OR: seedOwnedChildPrefixes.slice(1, 5).map((prefix) => ({
+        id: { startsWith: prefix },
+      })),
+    },
+  });
+  await prisma.reply.deleteMany({
+    where: {
+      id: { startsWith: seedOwnedChildPrefixes[2] },
+    },
+  });
+  await prisma.sLAAlert.deleteMany({
+    where: {
+      id: { startsWith: seedOwnedChildPrefixes[5] },
+    },
+  });
 
   let replyCount = 0;
   let eventCount = 0;

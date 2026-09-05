@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   AlertTriangle,
   BarChart3,
@@ -34,6 +34,8 @@ type DashboardData = {
     count: number;
   }[];
 };
+
+let dashboardCache: DashboardData | null = null;
 
 function MetricCard({
   label,
@@ -267,7 +269,6 @@ function WeeklyResolution({
         <EmptyChartState message="No resolution data available." />
       ) : (
         <div className="relative">
-          {/* Chart grid */}
           <div className="pointer-events-none absolute inset-x-0 bottom-8 top-0 flex flex-col justify-between">
             <div className="border-t border-dashed border-slate-100" />
             <div className="border-t border-dashed border-slate-100" />
@@ -275,7 +276,6 @@ function WeeklyResolution({
             <div className="border-t border-dashed border-slate-100" />
           </div>
 
-          {/* Bars */}
           <div className="relative flex h-64 items-end justify-between gap-2 border-b border-slate-200 px-1 sm:gap-4">
             {data.map((week) => {
               const height =
@@ -296,8 +296,7 @@ function WeeklyResolution({
                   className="group flex h-full flex-1 flex-col items-center justify-end"
                 >
                   <div className="relative flex w-full flex-1 items-end justify-center">
-                    {/* Hover value */}
-                    <div className="pointer-events-none absolute bottom-2 left-1/2 z-10 -translate-x-1/2 -translate-y-full rounded-lg bg-slate-900 px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100">
+                    <div className="pointer-events-none absolute bottom-2 left-1/2 z-10 -translate-x-1/2 -translate-y-full whitespace-nowrap rounded-lg bg-slate-900 px-2.5 py-1.5 text-xs font-semibold text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100">
                       {week.count} resolved
                     </div>
 
@@ -364,27 +363,50 @@ function DashboardSkeleton() {
 
 export default function Dashboard() {
   const [dashboard, setDashboard] =
-    useState<DashboardData | null>(null);
+    useState<DashboardData | null>(() => dashboardCache);
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(
+    () => dashboardCache === null
+  );
+
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    async function fetchDashboard() {
-      try {
-        const response =
-          await api.get<DashboardData>("/dashboard");
-
-        setDashboard(response.data);
-      } catch {
-        setError("Unable to load dashboard data.");
-      } finally {
-        setLoading(false);
-      }
+  const fetchDashboard = useCallback(async (force = false) => {
+    if (dashboardCache && !force) {
+      setDashboard(dashboardCache);
+      setLoading(false);
+      setError("");
+      return;
     }
 
-    void fetchDashboard();
+    setLoading(true);
+    setError("");
+
+    try {
+      const response =
+        await api.get<DashboardData>("/dashboard");
+
+      dashboardCache = response.data;
+
+      setDashboard(response.data);
+    } catch {
+      setError("Unable to load dashboard data.");
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    if (dashboardCache) {
+      setDashboard(dashboardCache);
+      setLoading(false);
+      return;
+    }
+
+    // This effect intentionally starts the initial request.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void fetchDashboard();
+  }, [fetchDashboard]);
 
   if (loading) {
     return <DashboardSkeleton />;
@@ -437,7 +459,6 @@ export default function Dashboard() {
   return (
     <main className="min-h-screen bg-white px-4 py-6 text-slate-900 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
-        {/* Header */}
         <header className="mb-8">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
@@ -478,7 +499,6 @@ export default function Dashboard() {
           </div>
         </header>
 
-        {/* Summary */}
         <section className="mb-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
           <MetricCard
             label="Open Tickets"
@@ -508,12 +528,10 @@ export default function Dashboard() {
           />
         </section>
 
-        {/* Resolution trend */}
         <section className="mb-6">
           <WeeklyResolution data={dashboard.resolvedPerWeek} />
         </section>
 
-        {/* Breakdowns */}
         <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <StatusBreakdown data={dashboard.statusBreakdown} />
 

@@ -302,12 +302,7 @@ export async function getTicketById(
     throw new AppError(404, "Ticket not found");
   }
 
-  // Archived tickets are not part of the normal queue.
-  if (ticket.archivedAt) {
-    throw new AppError(404, "Ticket not found");
-  }
-
-  // Supervisors can access any active ticket.
+  // Supervisors can access any ticket, including archived tickets.
   if (userRole === "SUPERVISOR") {
     return ticket;
   }

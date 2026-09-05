@@ -1,4 +1,9 @@
-import { useCallback, useEffect, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
 import api from "../lib/api";
 import type {
@@ -34,78 +39,164 @@ const DEFAULT_FILTERS: TicketFilters = {
   pageSize: 5,
 };
 
+type TicketCacheEntry = {
+  tickets: Ticket[];
+  pagination: TicketListResponse["data"]["pagination"];
+};
+
+const ticketCache = new Map<string, TicketCacheEntry>();
+
+function createCacheKey(filters: TicketFilters) {
+  return JSON.stringify({
+    search: filters.search.trim(),
+    status: filters.status,
+    priority: filters.priority,
+    category: filters.category,
+    assigneeId: filters.assigneeId,
+    archived: filters.archived,
+    sortBy: filters.sortBy,
+    sortOrder: filters.sortOrder,
+    page: filters.page,
+    pageSize: filters.pageSize,
+  });
+}
+
+function getCachedTickets(
+  filters: TicketFilters
+): TicketCacheEntry | undefined {
+  return ticketCache.get(createCacheKey(filters));
+}
+
 export function useTickets(
   initialFilters?: Partial<TicketFilters>
 ) {
-  const [tickets, setTickets] = useState<Ticket[]>([]);
-
-  const [pagination, setPagination] =
-    useState<TicketListResponse["data"]["pagination"]>({
-      page: 1,
-      pageSize: 10,
-      total: 0,
-      totalPages: 0,
-    });
-
   const [filters, setFilters] = useState<TicketFilters>({
     ...DEFAULT_FILTERS,
     ...initialFilters,
   });
 
-  const [loading, setLoading] = useState(true);
+  const cachedData = getCachedTickets(filters);
+
+  const [tickets, setTickets] = useState<Ticket[]>(
+    () => cachedData?.tickets ?? []
+  );
+
+  const [pagination, setPagination] =
+    useState<TicketListResponse["data"]["pagination"]>(
+      () =>
+        cachedData?.pagination ?? {
+          page: 1,
+          pageSize: DEFAULT_FILTERS.pageSize,
+          total: 0,
+          totalPages: 0,
+        }
+    );
+
+  const [loading, setLoading] = useState(
+    () => !cachedData
+  );
+
   const [error, setError] = useState("");
 
-  const fetchTickets = useCallback(async () => {
-    setLoading(true);
-    setError("");
+  const requestIdRef = useRef(0);
 
-    try {
-      const params = new URLSearchParams();
+  const fetchTickets = useCallback(
+    async (force = false) => {
+      const cacheKey = createCacheKey(filters);
+      const cached = ticketCache.get(cacheKey);
 
-      params.set("page", String(filters.page));
-      params.set("pageSize", String(filters.pageSize));
-      params.set("sortBy", filters.sortBy);
-      params.set("sortOrder", filters.sortOrder);
-      params.set("archived", String(filters.archived));
-
-      if (filters.search.trim()) {
-        params.set("search", filters.search.trim());
+      if (cached && !force) {
+        setTickets(cached.tickets);
+        setPagination(cached.pagination);
+        setLoading(false);
+        setError("");
+        return;
       }
 
-      if (filters.status) {
-        params.set("status", filters.status);
+      const requestId = ++requestIdRef.current;
+
+      setLoading(true);
+      setError("");
+
+      try {
+        const params = new URLSearchParams();
+
+        params.set("page", String(filters.page));
+        params.set("pageSize", String(filters.pageSize));
+        params.set("sortBy", filters.sortBy);
+        params.set("sortOrder", filters.sortOrder);
+        params.set("archived", String(filters.archived));
+
+        if (filters.search.trim()) {
+          params.set("search", filters.search.trim());
+        }
+
+        if (filters.status) {
+          params.set("status", filters.status);
+        }
+
+        if (filters.priority) {
+          params.set("priority", filters.priority);
+        }
+
+        if (filters.category) {
+          params.set("category", filters.category);
+        }
+
+        if (filters.assigneeId) {
+          params.set("assigneeId", filters.assigneeId);
+        }
+
+        const response = await api.get<TicketListResponse>(
+          `/tickets?${params.toString()}`
+        );
+
+        const nextData: TicketCacheEntry = {
+          tickets: response.data.data.tickets,
+          pagination: response.data.data.pagination,
+        };
+
+        ticketCache.set(cacheKey, nextData);
+
+        // Ignore an older request if the user has already
+        // changed filters and a newer request is active.
+        if (requestId !== requestIdRef.current) {
+          return;
+        }
+
+        setTickets(nextData.tickets);
+        setPagination(nextData.pagination);
+      } catch {
+        if (requestId !== requestIdRef.current) {
+          return;
+        }
+
+        setError("Unable to load tickets.");
+      } finally {
+        if (requestId === requestIdRef.current) {
+          setLoading(false);
+        }
       }
-
-      if (filters.priority) {
-        params.set("priority", filters.priority);
-      }
-
-      if (filters.category) {
-        params.set("category", filters.category);
-      }
-
-      if (filters.assigneeId) {
-        params.set("assigneeId", filters.assigneeId);
-      }
-
-      const response = await api.get<TicketListResponse>(
-        `/tickets?${params.toString()}`
-      );
-
-      setTickets(response.data.data.tickets);
-      setPagination(response.data.data.pagination);
-    } catch {
-      setError("Unable to load tickets.");
-    } finally {
-      setLoading(false);
-    }
-  }, [filters]);
+    },
+    [filters]
+  );
 
   useEffect(() => {
-    // This effect intentionally starts the request when ticket filters change.
+    const cached = getCachedTickets(filters);
+
+    if (cached) {
+      setTickets(cached.tickets);
+      setPagination(cached.pagination);
+      setLoading(false);
+      setError("");
+      return;
+    }
+
+    // This effect intentionally starts the request
+    // when ticket filters change.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void fetchTickets();
-  }, [fetchTickets]);
+  }, [filters, fetchTickets]);
 
   function updateFilters(
     changes: Partial<TicketFilters>
@@ -127,6 +218,10 @@ export function useTickets(
     }));
   }
 
+  const refetch = useCallback(() => {
+    return fetchTickets(true);
+  }, [fetchTickets]);
+
   return {
     tickets,
     pagination,
@@ -135,6 +230,6 @@ export function useTickets(
     error,
     updateFilters,
     setPage,
-    refetch: fetchTickets,
+    refetch,
   };
 }

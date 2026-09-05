@@ -1,52 +1,116 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import api from "../lib/api";
 import type { SLAAlert, SLAAlertsResponse } from "../types/sla";
 
 const SLA_ALERTS_CHANGED_EVENT = "sla-alerts-changed";
 
+let alertsCache: SLAAlert[] | null = null;
+
 export function useSlaAlerts() {
-  const [alerts, setAlerts] = useState<SLAAlert[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [alerts, setAlerts] = useState<SLAAlert[]>(
+    () => alertsCache ?? []
+  );
+
+  const [loading, setLoading] = useState(
+    () => alertsCache === null
+  );
+
   const [error, setError] = useState("");
 
-  const refetch = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError("");
+  const requestIdRef = useRef(0);
 
-      const response = await api.get<SLAAlertsResponse>("/sla/alerts");
-      setAlerts(response.data.data);
+  const refetch = useCallback(async (force = true) => {
+    // Use cached data when explicitly requested without forcing
+    // a server refresh.
+    if (!force && alertsCache !== null) {
+      setAlerts(alertsCache);
+      setLoading(false);
+      setError("");
+      return;
+    }
+
+    const requestId = ++requestIdRef.current;
+
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await api.get<SLAAlertsResponse>(
+        "/sla/alerts"
+      );
+
+      const nextAlerts = response.data.data;
+
+      alertsCache = nextAlerts;
+
+      if (requestId !== requestIdRef.current) {
+        return;
+      }
+
+      setAlerts(nextAlerts);
     } catch {
+      if (requestId !== requestIdRef.current) {
+        return;
+      }
+
       setError("Unable to load SLA alerts.");
     } finally {
-      setLoading(false);
+      if (requestId === requestIdRef.current) {
+        setLoading(false);
+      }
     }
   }, []);
 
   useEffect(() => {
-    const initialFetchId = window.setTimeout(() => {
-      void refetch();
-    }, 0);
-    window.addEventListener(SLA_ALERTS_CHANGED_EVENT, refetch);
+    if (alertsCache !== null) {
+      setAlerts(alertsCache);
+      setLoading(false);
+      setError("");
+    } else {
+      // This effect intentionally starts the initial request.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      void refetch(true);
+    }
+
+    const handleAlertsChanged = () => {
+      void refetch(true);
+    };
+
+    window.addEventListener(
+      SLA_ALERTS_CHANGED_EVENT,
+      handleAlertsChanged
+    );
 
     return () => {
-      window.clearTimeout(initialFetchId);
-      window.removeEventListener(SLA_ALERTS_CHANGED_EVENT, refetch);
+      window.removeEventListener(
+        SLA_ALERTS_CHANGED_EVENT,
+        handleAlertsChanged
+      );
     };
   }, [refetch]);
 
   async function acknowledge(alertId: string) {
     await api.post(`/sla/alerts/${alertId}/acknowledge`);
-    setAlerts((current) => current.filter((alert) => alert.id !== alertId));
-    window.dispatchEvent(new Event(SLA_ALERTS_CHANGED_EVENT));
+
+    const nextAlerts =
+      alertsCache?.filter(
+        (alert) => alert.id !== alertId
+      ) ?? [];
+
+    alertsCache = nextAlerts;
+    setAlerts(nextAlerts);
+
+    window.dispatchEvent(
+      new Event(SLA_ALERTS_CHANGED_EVENT)
+    );
   }
 
   return {
     alerts,
     loading,
     error,
-    refetch,
+    refetch: () => refetch(true),
     acknowledge,
   };
 }

@@ -79,10 +79,17 @@ export default function TicketDetails() {
       ========================================================== */}
       <header className="rounded-2xl border border-slate-200 bg-white px-6 py-5 shadow-sm lg:px-8">
         <div className="flex flex-col gap-5">
-          <TicketHeader subject={ticket.subject} />
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <TicketHeader subject={ticket.subject} />
+            {ticket.archivedAt && (
+              <span className="inline-flex items-center rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800">
+                Archived
+              </span>
+            )}
+          </div>
 
           <div className="flex flex-wrap items-center justify-end gap-2">
-            {!editing && (
+            {!ticket.archivedAt && !editing && (
               <button
                 type="button"
                 onClick={() => setEditing(true)}
@@ -93,7 +100,10 @@ export default function TicketDetails() {
               </button>
             )}
 
-            <TicketArchiveActions ticketId={ticket.id} />
+            <TicketArchiveActions
+              ticketId={ticket.id}
+              archived={Boolean(ticket.archivedAt)}
+            />
           </div>
         </div>
       </header>
@@ -101,7 +111,7 @@ export default function TicketDetails() {
       {/* =========================================================
           EDIT TICKET
       ========================================================== */}
-      {editing && (
+      {!ticket.archivedAt && editing && (
         <section className="rounded-2xl border border-blue-200 bg-white shadow-sm">
           <div className="flex items-center gap-3 rounded-t-2xl bg-blue-50/40 px-6 py-4 lg:px-8">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-100">
@@ -182,12 +192,14 @@ export default function TicketDetails() {
               <TicketReplies replies={ticket.replies} />
             </div>
 
-            <div className="bg-slate-50/70 px-6 py-6 lg:px-7 lg:py-7">
-              <TicketReplyForm
-                ticketId={ticket.id}
-                onUpdated={setTicket}
-              />
-            </div>
+            {!ticket.archivedAt && (
+              <div className="bg-slate-50/70 px-6 py-6 lg:px-7 lg:py-7">
+                <TicketReplyForm
+                  ticketId={ticket.id}
+                  onUpdated={setTicket}
+                />
+              </div>
+            )}
           </section>
 
           {/* Activity history */}
@@ -242,6 +254,7 @@ export default function TicketDetails() {
               <TicketMeta
                 ticket={ticket}
                 onUpdated={setTicket}
+                readOnly={Boolean(ticket.archivedAt)}
               />
             </section>
 
@@ -255,6 +268,7 @@ export default function TicketDetails() {
             <TicketCollaborators
               ticket={ticket}
               onUpdated={setTicket}
+              readOnly={Boolean(ticket.archivedAt)}
             />
           </div>
         </aside>

@@ -17,6 +17,7 @@ import type {
 type TicketMetaProps = {
   ticket: TicketDetailsType;
   onUpdated: (ticket: TicketDetailsType) => void;
+  readOnly?: boolean;
 };
 
 const statusOptions = [
@@ -80,6 +81,7 @@ function getPriorityStyles(priority: string) {
 export default function TicketMeta({
   ticket,
   onUpdated,
+  readOnly = false,
 }: TicketMetaProps) {
   const [statusLoading, setStatusLoading] = useState(false);
   const [statusError, setStatusError] = useState("");
@@ -98,7 +100,6 @@ export default function TicketMeta({
       const response = await api.get<TicketDetailsResponse>(
         `/tickets/${ticket.id}`
       );
-
       onUpdated(response.data.data);
     } catch (error: unknown) {
       setStatusError(
@@ -146,7 +147,7 @@ export default function TicketMeta({
             id="ticketStatus"
             value={ticket.status}
             onChange={handleStatusChange}
-            disabled={statusLoading}
+            disabled={readOnly || statusLoading}
             className="w-full appearance-none rounded-lg border border-slate-300 bg-white px-3 py-2.5 pr-9 text-sm font-semibold text-slate-800 outline-none transition hover:border-slate-400 focus:border-[#173b67] focus:ring-2 focus:ring-[#173b67]/10 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {statusOptions.map((status) => (

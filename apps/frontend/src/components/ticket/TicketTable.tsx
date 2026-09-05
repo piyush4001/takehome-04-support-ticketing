@@ -125,16 +125,20 @@ export default function TicketTable({
 
                     <td className="max-w-xs px-5 py-4">
                       {archived ? (
-                        <div className="block">
+                        <Link
+                          to={`/tickets/${ticket.id}`}
+                          className="group/link block"
+                        >
                           <div className="flex items-center gap-2">
-                            <span className="block truncate font-semibold text-slate-900">
+                            <span className="block truncate font-semibold text-slate-900 transition-colors group-hover/link:text-[#173b67]">
                               {ticket.subject}
                             </span>
+                            <ChevronRight className="h-4 w-4 shrink-0 text-slate-300 transition-colors group-hover/link:text-[#173b67]" />
                           </div>
                           <span className="mt-1 block truncate font-mono text-[11px] text-slate-400">
                             {ticket.id}
                           </span>
-                        </div>
+                        </Link>
                       ) : (
                         <Link
                           to={`/tickets/${ticket.id}`}

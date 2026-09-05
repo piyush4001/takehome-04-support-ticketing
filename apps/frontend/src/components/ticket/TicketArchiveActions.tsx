@@ -1,15 +1,22 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Archive, AlertCircle, Loader2 } from "lucide-react";
+import {
+  Archive,
+  AlertCircle,
+  Loader2,
+  RotateCcw,
+} from "lucide-react";
 import api from "../../lib/api";
 import { getApiErrorMessage } from "../../lib/api-error";
 
 type TicketArchiveActionsProps = {
   ticketId: string;
+  archived?: boolean;
 };
 
 export default function TicketArchiveActions({
   ticketId,
+  archived = false,
 }: TicketArchiveActionsProps) {
   const navigate = useNavigate();
 
@@ -39,26 +46,68 @@ export default function TicketArchiveActions({
     }
   }
 
+  async function handleRestore() {
+    const confirmed = window.confirm(
+      "Are you sure you want to restore this ticket?"
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError("");
+      await api.patch(`/tickets/${ticketId}/restore`);
+      navigate(`/tickets/${ticketId}`);
+    } catch (error: unknown) {
+      setError(getApiErrorMessage(error, "Unable to restore ticket."));
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <div className="flex flex-col items-end gap-2">
-      <button
-        type="button"
-        onClick={handleArchive}
-        disabled={loading}
-        className="inline-flex items-center justify-center gap-2 rounded-lg border border-red-200 bg-white px-4 py-2.5 text-sm font-semibold text-red-700 shadow-sm transition hover:border-red-300 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500/20 disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        {loading ? (
-          <>
-            <Loader2 className="h-4 w-4 animate-spin" />
-            Archiving...
-          </>
-        ) : (
-          <>
-            <Archive className="h-4 w-4" />
-            Archive ticket
-          </>
-        )}
-      </button>
+      {archived ? (
+        <button
+          type="button"
+          onClick={handleRestore}
+          disabled={loading}
+          className="inline-flex items-center justify-center gap-2 rounded-lg border border-emerald-200 bg-white px-4 py-2.5 text-sm font-semibold text-emerald-700 shadow-sm transition hover:border-emerald-300 hover:bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {loading ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Restoring...
+            </>
+          ) : (
+            <>
+              <RotateCcw className="h-4 w-4" />
+              Restore ticket
+            </>
+          )}
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={handleArchive}
+          disabled={loading}
+          className="inline-flex items-center justify-center gap-2 rounded-lg border border-red-200 bg-white px-4 py-2.5 text-sm font-semibold text-red-700 shadow-sm transition hover:border-red-300 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {loading ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Archiving...
+            </>
+          ) : (
+            <>
+              <Archive className="h-4 w-4" />
+              Archive ticket
+            </>
+          )}
+        </button>
+      )}
 
       {error && (
         <div className="flex max-w-xs items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-left">
